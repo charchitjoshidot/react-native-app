@@ -1,11 +1,7 @@
 import React, {useState} from "react";
-import { Text, StyleSheet, View, FlatList, TextInput, ActivityIndicator, Image, Dimensions, Button} from 'react-native';
+import { Text, StyleSheet, View, FlatList, TextInput, ActivityIndicator, Image, Dimensions, TouchableHighlight} from 'react-native';
 import { Dropdown } from 'react-native-material-dropdown';
-import { black } from "color-name";
-
-const data = [
-  { key: 'A' }, { key: 'B' }, { key: 'C' }, { key: 'D' }, { key: 'E' }, { key: 'F' }, { key: 'G' }, { key: 'H' }, { key: 'I' }, { key: 'J' }
-];
+import { searchPhotos } from "../helpers/FlickrAPI";
 
 export default class HomeScreen extends React.Component{
 
@@ -20,6 +16,16 @@ export default class HomeScreen extends React.Component{
       paddingLeft: 10,
       borderColor: '#009688',
       backgroundColor: '#FFFFFF',
+    },
+    button: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#0078D4',
+      height: 30
+    },
+    buttonText: {
+      color: 'white',
+      fontSize: 18 
     }
   })
 
@@ -38,7 +44,7 @@ export default class HomeScreen extends React.Component{
       searchQuery: 'chicago',
       numColumns: "2",
       buttonClicked: false,
-      arrayHolder : []
+      photos : []
     };
     this.updateSearchQuery = this.updateSearchQuery.bind(this);
     this.onChangeDropDownValue = this.onChangeDropDownValue.bind(this);
@@ -46,18 +52,13 @@ export default class HomeScreen extends React.Component{
   }
 
   componentDidMount() {
-    const settings = {
-      "async": true,
-      "crossDomain": true,
-      "url": "https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=28d845f29cf1d71a2b89123de6be3448&tags=chicago&format=json&nojsoncallback=1&auth_token=72157714101339551-8f3b1161af2305d6&api_sig=24f4be344fe983844977ebd2d2732fa5",
-      "method": "POST",
-      "headers": {}
-    }
-
-    return fetch(settings)
-      .then(response => {
-        console.log(response);
+    searchPhotos(this.state.searchQuery)
+    .then(response => {
+      console.log('there are ' + response.length+ ' photos in the result');
+      this.setState({
+        photos: response
       })
+    })
   }
   
   updateSearchQuery(text) {
@@ -69,8 +70,19 @@ export default class HomeScreen extends React.Component{
   }
 
   onClickSearchButton() {
-    //to do search using flicker api
-    this.setState({buttonClicked: true})
+    if(this.state.searchQuery){
+      this.setState({isLoading: true});
+      searchPhotos(this.state.searchQuery)
+        .then(response => {
+          if(response.length) {
+            console.log('there are ' + response.length + ' photos in the result');
+            this.setState({
+              photos: response,
+              isLoading: false
+            })
+          }
+        })
+    }
   }
 
   renderSeparator() {
@@ -86,14 +98,6 @@ export default class HomeScreen extends React.Component{
       />
     );
   };
-
-  renderImageSection() {
-    return (
-      <View style={{backgroundColor: "#ffc0cb", margin: 10, alignItems: "center", justifyContent: 'center'}} >
-        <Text>Image Here</Text>
-      </View>
-    )
-  }
 
   formatData(data, numColumns) {
     const numberOfFullRows = Math.floor(data.length / numColumns);
@@ -127,32 +131,43 @@ export default class HomeScreen extends React.Component{
           onChangeText={this.updateSearchQuery}
         />
         <View style={{ flexDirection: 'row' }}>
-          <View style={{ flex: 1 }}>
-            {/* <Dropdown
+          <View style={{flex: 1}}>
+            <Dropdown
               label='Number of Columns'
               value={this.state.numColumns}
               onChangeText={this.onChangeDropDownValue}
               data={this.dropDownData}
-            /> */}
+            />
           </View>
           <View style={{ width: "50%", marginLeft: 8, marginTop: 25 }}>
-            <Button
-              onPress={this.onClickSearchButton}
-              title="Search on Flickr"
-            />
+            <TouchableHighlight
+              style={this.styles.button}
+              underlayColor='white'
+              onPress={() => this.onClickSearchButton()}
+            >
+              <View>
+                <Text style={this.styles.buttonText}>Search on Flickr</Text>
+              </View>
+            </TouchableHighlight>
           </View>
         </View>
         <View>
           <Text>This is text field value : {this.state.searchQuery}</Text>
           <Text>This is drop down field value : {this.state.numColumns} </Text>
           <Text>This is button clicked event : {this.state.buttonClicked} </Text>
+          <Text>Total Number of Photos : {this.state.photos.length} </Text>
         </View>
         <View>
           <FlatList
-            data={this.formatData(data, this.state.numColumns)}
+            data={this.formatData(this.state.photos, this.state.numColumns)}
             style={{ backgroundColor: "#d1d1d1", height: 550 }}
             ItemSeparatorComponent={this.renderSeparator}
-            renderItem={this.renderImageSection}
+            renderItem={({item}) => <View>
+              <Image
+                style={{width: 100, height: 100}}
+                source={{ uri: item.url_m }}
+              />
+            </View> }
             enableEmptySections={true}
             numColumns={this.state.numColumns}
             keyExtractor={(item, index) => index.toString()}
