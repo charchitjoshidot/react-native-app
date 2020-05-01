@@ -2,6 +2,8 @@ import React, {useState} from "react";
 import { Text, StyleSheet, View, FlatList, TextInput, ActivityIndicator, Image, Dimensions, TouchableHighlight} from 'react-native';
 import { Dropdown } from 'react-native-material-dropdown';
 import { searchPhotos } from "../helpers/FlickrAPI";
+import * as FileSystem from 'expo-file-system';
+
 
 export default class HomeScreen extends React.Component{
 
@@ -33,8 +35,7 @@ export default class HomeScreen extends React.Component{
     { value: "1" },
     { value: "2" },
     { value: "3" },
-    { value: "4" },
-    { value: "5" }
+    { value: "4" }
   ];
 
   constructor(props) {
@@ -44,19 +45,16 @@ export default class HomeScreen extends React.Component{
       searchQuery: 'chicago',
       numColumns: "4",
       page: 1,
-      buttonClicked: false,
       photos : []
     };
     this.updateSearchQuery = this.updateSearchQuery.bind(this);
     this.onChangeDropDownValue = this.onChangeDropDownValue.bind(this);
     this.onClickSearchButton = this.onClickSearchButton.bind(this);
-    // this.handleLoadMorePhotos = this.handleLoadMorePhotos.bind(this);
   }
 
   componentDidMount() {
     searchPhotos(this.state.searchQuery, this.state.page)
     .then(response => {
-      console.log('there are ' + response.length+ ' photos in the result');
       this.setState({
         photos: response
       })
@@ -68,7 +66,9 @@ export default class HomeScreen extends React.Component{
   }
 
   onChangeDropDownValue(value) {
-    this.setState({numColumns: value})
+    this.setState({
+      numColumns: value
+    })
   }
 
   onClickSearchButton() {
@@ -112,17 +112,6 @@ export default class HomeScreen extends React.Component{
       })
     })
   }
-
-  formatData(data, numColumns) {
-    const numberOfFullRows = Math.floor(data.length / numColumns);
-
-    let numberOfElementsLastRow = data.length - (numberOfFullRows * numColumns);
-    while (numberOfElementsLastRow !== numColumns && numberOfElementsLastRow !== 0) {
-      data.push({ key: `blank-${numberOfElementsLastRow}`, empty: true });
-      numberOfElementsLastRow++;
-    }
-    return data;
-  };
 
   render() {
     if (this.state.isLoading) {
@@ -168,26 +157,28 @@ export default class HomeScreen extends React.Component{
         <View>
           <Text>This is text field value : {this.state.searchQuery}</Text>
           <Text>This is drop down field value : {this.state.numColumns} </Text>
-          <Text>This is button clicked event : {this.state.buttonClicked} </Text>
           <Text>Total Number of Photos : {this.state.photos.length} </Text>
         </View>
         <View>
-          <FlatList
-            data={this.state.photos}
-            style={{ backgroundColor: "#d1d1d1", height: 550 }}
-            ItemSeparatorComponent={this.renderSeparator}
-            renderItem={({item}) => <View>
-              <Image
-                style={{width: 100, height: 100}}
-                source={{ uri: item.url_m }}
-              />
-            </View> }
-            enableEmptySections={true}
-            numColumns={this.state.numColumns}
-            keyExtractor={item => item.id}
-            onEndReached={this.handleLoadMorePhotos}
-            onEndReachedThreshold={1}
-          />
+          <View>
+            <FlatList
+              data={this.state.photos}
+              style={{ backgroundColor: "#d1d1d1", height: 550 }}
+              ItemSeparatorComponent={this.renderSeparator}
+              renderItem={({ item }) => <View>
+                <Image
+                  style={{ width: 100, height: 100 }}
+                  source={{ uri: item.url_m }}
+                />
+              </View>}
+              enableEmptySections={true}
+              numColumns={this.state.numColumns}
+              key={this.state.numColumns}
+              keyExtractor={item => item.id}
+              onEndReached={this.handleLoadMorePhotos}
+              onEndReachedThreshold={1}
+            />
+          </View>
         </View>
       </View>
     );
