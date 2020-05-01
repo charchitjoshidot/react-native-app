@@ -42,17 +42,19 @@ export default class HomeScreen extends React.Component{
     this.state = {
       isLoading: false,
       searchQuery: 'chicago',
-      numColumns: "2",
+      numColumns: "4",
+      page: 1,
       buttonClicked: false,
       photos : []
     };
     this.updateSearchQuery = this.updateSearchQuery.bind(this);
     this.onChangeDropDownValue = this.onChangeDropDownValue.bind(this);
     this.onClickSearchButton = this.onClickSearchButton.bind(this);
+    // this.handleLoadMorePhotos = this.handleLoadMorePhotos.bind(this);
   }
 
   componentDidMount() {
-    searchPhotos(this.state.searchQuery)
+    searchPhotos(this.state.searchQuery, this.state.page)
     .then(response => {
       console.log('there are ' + response.length+ ' photos in the result');
       this.setState({
@@ -75,7 +77,6 @@ export default class HomeScreen extends React.Component{
       searchPhotos(this.state.searchQuery)
         .then(response => {
           if(response.length) {
-            console.log('there are ' + response.length + ' photos in the result');
             this.setState({
               photos: response,
               isLoading: false
@@ -98,6 +99,19 @@ export default class HomeScreen extends React.Component{
       />
     );
   };
+
+  handleLoadMorePhotos = () => {
+    this.setState({
+      page: this.state.page + 1
+    }, () => {
+      searchPhotos(this.state.searchQuery, this.state.page)
+      .then(response => {
+        this.setState({
+          photos: [...this.state.photos, ...response]
+        })
+      })
+    })
+  }
 
   formatData(data, numColumns) {
     const numberOfFullRows = Math.floor(data.length / numColumns);
@@ -159,7 +173,7 @@ export default class HomeScreen extends React.Component{
         </View>
         <View>
           <FlatList
-            data={this.formatData(this.state.photos, this.state.numColumns)}
+            data={this.state.photos}
             style={{ backgroundColor: "#d1d1d1", height: 550 }}
             ItemSeparatorComponent={this.renderSeparator}
             renderItem={({item}) => <View>
@@ -170,7 +184,9 @@ export default class HomeScreen extends React.Component{
             </View> }
             enableEmptySections={true}
             numColumns={this.state.numColumns}
-            keyExtractor={(item, index) => index.toString()}
+            keyExtractor={item => item.id}
+            onEndReached={this.handleLoadMorePhotos}
+            onEndReachedThreshold={1}
           />
         </View>
       </View>
