@@ -10,7 +10,7 @@ export default class HomeScreen extends React.Component{
   styles = StyleSheet.create({
     viewStyle: {
       marginTop: 10,
-      padding: 16,
+      padding: 5,
     },
     textInputStyle: {
       height: 35,
@@ -146,8 +146,7 @@ export default class HomeScreen extends React.Component{
             <TouchableHighlight
               style={this.styles.button}
               underlayColor='white'
-              onPress={() => this.onClickSearchButton()}
-            >
+              onPress={() => this.onClickSearchButton()}>
               <View>
                 <Text style={this.styles.buttonText}>Search on Flickr</Text>
               </View>
@@ -155,19 +154,13 @@ export default class HomeScreen extends React.Component{
           </View>
         </View>
         <View>
-          <Text>This is text field value : {this.state.searchQuery}</Text>
-          <Text>This is drop down field value : {this.state.numColumns} </Text>
-          <Text>Total Number of Photos : {this.state.photos.length} </Text>
-        </View>
-        <View>
           <View>
             <FlatList
               data={this.state.photos}
-              style={{ backgroundColor: "#d1d1d1", height: 550 }}
-              ItemSeparatorComponent={this.renderSeparator}
+              style={{ backgroundColor: "#fff", height: 550 }}
               renderItem={({ item }) => <View>
                 <Image
-                  style={{ width: 100, height: 100 }}
+                  style={{ width: (Dimensions.get('window').width - 20) / this.state.numColumns, height: Dimensions.get('window').width / this.state.numColumns, margin: 1}}
                   source={{ uri: item.url_m }}
                 />
               </View>}
