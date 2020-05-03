@@ -29,7 +29,6 @@ export async function searchPhotos(keyword, page, isOnline) {
   }
 
   // if user is online then download and cache data and return list of photos
-  console.log('user is online');
   const searchObject = await FileSystem.downloadAsync(
     remoteURI,
     filesystemURI
