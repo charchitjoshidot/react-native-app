@@ -21,7 +21,7 @@ npm start
 ## Example
 
 ```bash
-git clone https://github.com/Epsilon0910/react-native-app
+git clone https://github.com/Epsilon0910/react-native-app.git
 cd react-native-material-dropdown/example
 npm install
 npm start
