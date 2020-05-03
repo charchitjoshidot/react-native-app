@@ -1,9 +1,10 @@
-import React, {useState} from "react";
+import React, { YellowBox } from "react";
+import _ from 'lodash';
 import { Text, StyleSheet, View, FlatList, TextInput, ActivityIndicator, Image, Dimensions, TouchableHighlight} from 'react-native';
 import { Dropdown } from 'react-native-material-dropdown';
 import { searchPhotos } from "../helpers/FlickrAPI";
 import * as FileSystem from 'expo-file-system';
-
+import NetInfo from "@react-native-community/netinfo";
 
 export default class HomeScreen extends React.Component{
 
@@ -35,14 +36,16 @@ export default class HomeScreen extends React.Component{
     { value: "1" },
     { value: "2" },
     { value: "3" },
-    { value: "4" }
+    { value: "4" },
+    { value: "5" }
   ];
 
   constructor(props) {
     super(props);
     this.state = {
-      isLoading: false,
-      searchQuery: 'chicago',
+      isLoading: true,
+      isOnline: true,
+      searchQuery: 'taj mahal',
       numColumns: "4",
       page: 1,
       photos : []
@@ -53,14 +56,29 @@ export default class HomeScreen extends React.Component{
   }
 
   componentDidMount() {
-    searchPhotos(this.state.searchQuery, this.state.page)
-    .then(response => {
-      this.setState({
-        photos: response
-      })
+    NetInfo.fetch().then(state => {
+      if (!state.isInternetReachable) {
+        this.setState({
+          isOnline: false
+        })
+      }
     })
+
+    setTimeout(() => {
+      searchPhotos(this.state.searchQuery, this.state.page, this.state.isOnline)
+        .then(response => {
+          if (response.length) {
+            this.setState({
+              photos: response,
+              isLoading: false
+            })
+          } else {
+            alert('User is offline, Please Turn on Mobile Network to perform search query');
+          }
+        })
+    }, 1500)
   }
-  
+
   updateSearchQuery(text) {
     this.setState({ searchQuery : text})
   }
@@ -74,16 +92,35 @@ export default class HomeScreen extends React.Component{
   onClickSearchButton() {
     if(this.state.searchQuery){
       this.setState({isLoading: true});
-      searchPhotos(this.state.searchQuery)
+      searchPhotos(this.state.searchQuery, this.state.page, this.state.isOnline)
         .then(response => {
           if(response.length) {
             this.setState({
               photos: response,
               isLoading: false
             })
+          } else {
+            alert('User is offline, Please Turn on Mobile Network to perform search query');
           }
         })
     }
+  }
+
+  handleLoadMorePhotos = () => {
+    NetInfo.fetch().then(state => {
+      if (state.isInternetReachable) {
+        this.setState({
+          page: this.state.page + 1
+        }, () => {
+          searchPhotos(this.state.searchQuery, this.state.page, this, this.state.isOnline)
+            .then(response => {
+              this.setState({
+                photos: [...this.state.photos, ...response]
+              })
+            })
+        })
+      }
+    })
   }
 
   renderSeparator() {
@@ -100,20 +137,8 @@ export default class HomeScreen extends React.Component{
     );
   };
 
-  handleLoadMorePhotos = () => {
-    this.setState({
-      page: this.state.page + 1
-    }, () => {
-      searchPhotos(this.state.searchQuery, this.state.page)
-      .then(response => {
-        this.setState({
-          photos: [...this.state.photos, ...response]
-        })
-      })
-    })
-  }
-
   render() {
+    const path = `${FileSystem.documentDirectory}`;
     if (this.state.isLoading) {
       //Loading View while data is loading
       return (
@@ -157,11 +182,11 @@ export default class HomeScreen extends React.Component{
           <View>
             <FlatList
               data={this.state.photos}
-              style={{ backgroundColor: "#fff", height: 550 }}
+              style={{ backgroundColor: "#fff", height: (Dimensions.get('window').height - 200) }}
               renderItem={({ item }) => <View>
                 <Image
-                  style={{ width: (Dimensions.get('window').width - 20) / this.state.numColumns, height: Dimensions.get('window').width / this.state.numColumns, margin: 1}}
-                  source={{ uri: item.url_m }}
+                  style={{ width: (Dimensions.get('window').width - 20) / this.state.numColumns, height: Dimensions.get('window').width / this.state.numColumns, margin: 1 }}
+                  source={{ uri: item.url_m, cache: 'only-if-cached'}}
                 />
               </View>}
               enableEmptySections={true}

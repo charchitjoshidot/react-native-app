@@ -43,4 +43,8 @@ target 'ReactNativeApp' do
 
   # react-native-cli autolinking
   use_native_modules!
+  pod 'react-native-fetch-blob', :path => '../node_modules/react-native-fetch-blob'
+
+  pod 'RNFastImage', :path => '../node_modules/react-native-fast-image'
+
 end
